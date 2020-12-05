@@ -20,3 +20,8 @@ path = "src/main_02.rs"
 [[bin]]
 name = "main_03"
 path = "src/main_03.rs"
+
+[[bin]]
+# requires nightly (`cargo +nightly run` etc.) due to use of str::split_once
+name = "main_04"
+path = "src/main_04.rs"

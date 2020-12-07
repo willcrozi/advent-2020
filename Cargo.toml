@@ -9,6 +9,11 @@ edition = "2018"
 [dependencies]
 regex = "1.4"
 
+# requires nightly (`cargo +nightly run` etc.) due to use of str::split_once
+[lib]
+name = "advent_2020"
+path = "src/lib.rs"
+
 [[bin]]
 name = "main_01"
 path = "src/main_01.rs"
@@ -22,10 +27,13 @@ name = "main_03"
 path = "src/main_03.rs"
 
 [[bin]]
-# requires nightly (`cargo +nightly run` etc.) due to use of str::split_once
 name = "main_04"
 path = "src/main_04.rs"
 
 [[bin]]
 name = "main_05"
 path = "src/main_05.rs"
+
+[[bin]]
+name = "main_06"
+path = "src/main_06.rs"

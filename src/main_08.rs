@@ -1,9 +1,10 @@
 use std::str::FromStr;
 
-fn main() {
-    let input = include_str!("../data/data_08.txt");
+static PROGRAM_DATA: &'static str = include_str!("../data/data_08.txt");
 
-    let program = input.lines().map(|line| Some(parse(line))).collect::<Vec<_>>();
+fn main() {
+    let program = PROGRAM_DATA.lines()
+        .map(|line| Some(parse(line))).collect::<Vec<_>>();
 
     // Part 1.
 

@@ -1,5 +1,3 @@
-#![feature(str_split_once)]
-
 use advent_2020::*;
 
 use std::str::FromStr;
@@ -136,7 +134,7 @@ impl Passport {
     }
 
     fn parse_field(&mut self, entry: &str) {
-        if let Some((key, val)) = entry.split_once(':') {
+        if let Some((key, val)) = split_once(entry, ":") {
             let field = match key {
                 "byr" => &mut self.byr,
                 "iyr" => &mut self.iyr,

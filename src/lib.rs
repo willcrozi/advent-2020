@@ -1,11 +1,14 @@
-#![feature(pattern)]
-
-use std::str::pattern::Pattern;
 use std::mem;
 
 /// Returns the left and right halves of `s` split at the first index where the pattern `p` matches.
-pub fn split_when<'s, P: Pattern<'s>>(s: &'s str, p: P) -> Option<(&'s str, &'s str)> {
-    s.find(p).map(|i| s.split_at(i))
+pub fn split_when<F: Fn(char) -> bool>(s: &str, f: F) -> Option<(&str, &str)> {
+    s.find(f).map(|i| s.split_at(i))
+}
+
+pub fn split_once<'a>(s: &'a str, delimiter: &str) -> Option<(&'a str, &'a str)> {
+    s.find(delimiter)
+        .map(|index| (&s[0..index], &s[(index + delimiter.len())..]))
+
 }
 
 /// Returns an iterator that iterates over the paragraphs in `input`. A paragraph is any consecutive

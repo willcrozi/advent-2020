@@ -1,15 +1,29 @@
 use std::mem;
 
-/// Returns the left and right halves of `s` split at the first index where the pattern `p` matches.
-pub fn split_when<F: Fn(char) -> bool>(s: &str, f: F) -> Option<(&str, &str)> {
-    s.find(f).map(|i| s.split_at(i))
+pub trait StrExt {
+    /// Returns the left and right halves of `s` split at the first index where the pattern `p` matches.
+    fn split_when<F: Fn(char) -> bool>(&self, f: F) -> Option<(&str, &str)>;
+
+    /// Returns the result of splitting this string slice at the first occurrence of `delimiter`.
+    /// The resulting halves both exclude the delimiter. Returns `None` if `delimiter` does not
+    /// match within the string.
+    ///
+    /// Substitute for `core::str::split_once` without relying on nightly channel.
+    fn split_once_(&self, delimiter: &str) -> Option<(&str, &str)>;
 }
 
-pub fn split_once<'a>(s: &'a str, delimiter: &str) -> Option<(&'a str, &'a str)> {
-    s.find(delimiter)
-        .map(|index| (&s[0..index], &s[(index + delimiter.len())..]))
+impl StrExt for str {
+    fn split_when<F: Fn(char) -> bool>(&self, f: F) -> Option<(&str, &str)> {
+        self.find(f).map(|i| self.split_at(i))
+    }
 
+    fn split_once_(&self, delimiter: &str) -> Option<(&str, &str)> {
+        self.find(delimiter)
+            .map(|index| (&self[0..index], &self[(index + delimiter.len())..]))
+
+    }
 }
+
 
 /// Returns an iterator that iterates over the paragraphs in `input`. A paragraph is any consecutive
 /// lines of text separated by one or more blank lines, i.e. lines that are empty or consist only of

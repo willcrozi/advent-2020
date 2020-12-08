@@ -101,7 +101,7 @@ impl Passport {
         ).unwrap_or(false);
 
         valid &= self.hgt.as_ref().map(|hgt| {
-            split_when(hgt, char::is_alphabetic)
+            hgt.split_when(char::is_alphabetic)
                 .map(|(qty, units)| {
                     let qty = u32::from_str(qty);
                     match (qty, units) {
@@ -136,7 +136,7 @@ impl Passport {
     }
 
     fn parse_field(&mut self, entry: &str) {
-        if let Some((key, val)) = split_once(entry, ":") {
+        if let Some((key, val)) = entry.split_once_(":") {
             let field = match key {
                 "byr" => &mut self.byr,
                 "iyr" => &mut self.iyr,

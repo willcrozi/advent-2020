@@ -32,22 +32,22 @@ fn main() {
 
 
 #[derive(Clone, Debug)]
-struct Passport {
-    byr: Option<String>,  // (Birth Year)
-    iyr: Option<String>,  // (Issue Year)
-    eyr: Option<String>,  // (Expiration Year)
-    hgt: Option<String>,  // (Height)
-    hcl: Option<String>,  // (Hair Color)
-    ecl: Option<String>,  // (Eye Color)
-    pid: Option<String>,  // (Passport ID)
-    cid: Option<String>,  // (Country ID)
+struct Passport<'s> {
+    byr: Option<&'s str>,  // (Birth Year)
+    iyr: Option<&'s str>,  // (Issue Year)
+    eyr: Option<&'s str>,  // (Expiration Year)
+    hgt: Option<&'s str>,  // (Height)
+    hcl: Option<&'s str>,  // (Hair Color)
+    ecl: Option<&'s str>,  // (Eye Color)
+    pid: Option<&'s str>,  // (Passport ID)
+    cid: Option<&'s str>,  // (Country ID)
 
     parse_error: bool,
 }
 
-impl Passport {
+impl<'s> Passport<'s> {
 
-    fn parse(input: &str) -> Passport {
+    fn parse(input: &'s str) -> Passport {
         let mut pp = Passport {
             byr: None, iyr: None, eyr: None, hgt: None,
             hcl: None, ecl: None, pid: None, cid: None,
@@ -62,14 +62,14 @@ impl Passport {
     }
 
     fn is_valid_pt1(&self) -> bool {
-        !self.parse_error &&
-            self.byr.is_some() &&
-            self.iyr.is_some() &&
-            self.eyr.is_some() &&
-            self.hgt.is_some() &&
-            self.hcl.is_some() &&
-            self.ecl.is_some() &&
-            self.pid.is_some()
+        !self.parse_error
+            && self.byr.is_some()
+            && self.iyr.is_some()
+            && self.eyr.is_some()
+            && self.hgt.is_some()
+            && self.hcl.is_some()
+            && self.ecl.is_some()
+            && self.pid.is_some()
     }
 
     /// Validation for part 2:
@@ -88,17 +88,11 @@ impl Passport {
     fn is_valid_pt2(&self) -> bool {
         let mut valid = true;
 
-        valid &= self.byr.as_ref().map(|byr|
-            u32::from_str(byr).map(|ref year| (1920..=2002).contains(year)).unwrap_or(false)
-        ).unwrap_or(false);
+        valid &= self.byr.is_some_and_valid(|ref year| (1920..=2002).contains(year));
 
-        valid &= self.iyr.as_ref().map(|iyr|
-            u32::from_str(iyr).map(|ref year| (2010..=2020).contains(year)).unwrap_or(false)
-        ).unwrap_or(false);
+        valid &= self.iyr.is_some_and_valid(|ref year| (2010..=2020).contains(year));
 
-        valid &= self.eyr.as_ref().map(|eyr|
-            u32::from_str(eyr).map(|ref year| (2020..=2030).contains(year)).unwrap_or(false)
-        ).unwrap_or(false);
+        valid &= self.eyr.is_some_and_valid(|ref year| (2020..=2030).contains(year));
 
         valid &= self.hgt.as_ref().map(|hgt| {
             hgt.split_when(char::is_alphabetic)
@@ -119,8 +113,8 @@ impl Passport {
                 (0, true), |(len, is_hex), c| (len + 1, is_hex && c.is_ascii_hexdigit())) == (6, true)
         }).unwrap_or(false);
 
-        valid &= self.ecl.as_ref().map(|ecl|
-            match ecl.as_str() {
+        valid &= self.ecl.map(|ecl|
+            match ecl {
                 "amb" | "blu" | "brn" | "gry" | "grn" | "hzl" | "oth" => true,
                 _ => false,
             }
@@ -135,7 +129,7 @@ impl Passport {
         valid
     }
 
-    fn parse_field(&mut self, entry: &str) {
+    fn parse_field(&mut self, entry: &'s str) {
         if let Some((key, val)) = entry.split_once_(":") {
             let field = match key {
                 "byr" => &mut self.byr,
@@ -154,7 +148,7 @@ impl Passport {
 
             if field.is_some() { self.parse_error = true; }
 
-            *field = Some(String::from(val));
+            *field = Some(val);
         } else {
             // Field format not recognised.
             self.parse_error = true;

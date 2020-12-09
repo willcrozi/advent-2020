@@ -1,37 +1,76 @@
 use std::str::FromStr;
 
-pub trait StrExt
-    where Self: AsRef<str>,
-{
+pub trait StrExt<'s> {
     /// Returns the left and right halves of `s` split at the first index where the pattern `p` matches.
-    fn split_when<F: Fn(char) -> bool>(&self, f: F) -> Option<(&str, &str)> {
-        let self_: &str = self.as_ref();
-        self_.find(f).map(|i| self_.split_at(i))
-    }
+    fn split_when<F: Fn(char) -> bool>(&self, f: F) -> Option<(&'s str, &'s str)>;
 
     /// Returns the result of splitting this string slice at the first occurrence of `delimiter`.
     /// The resulting halves both exclude the delimiter. Returns `None` if `delimiter` does not
     /// match within the string.
     ///
     /// Substitute for `core::str::split_once` without relying on nightly channel.
-    fn split_once_(&self, delimiter: &str) -> Option<(&str, &str)> {
-        let self_: &str = self.as_ref();
-        self_.find(delimiter)
-            .map(|index| (&self_[0..index], &self_[(index + delimiter.len())..]))
-    }
+    fn split_once_(&self, delimiter: &str) -> Option<(&'s str, &'s str)>;
 
-    fn paragraphs(&self, trim_newline: bool) -> Paragraphs {
-        Paragraphs { text: self.as_ref(), trim_newline }
-    }
+    /// Returns an iterator over the paragraphs contained in this string. A paragraph is defined as
+    /// any block of text separated by one or more blank lines. A line containing nothing other than
+    /// whitespace is considered blank.
+    ///
+    /// If `trim_newline` is passed as true any newline (and carriage return if present) trailing a
+    /// paragraph will be excluded, otherwise it will be included.
+    fn paragraphs(&self, trim_newline: bool) -> Paragraphs<'s>;
 
-    #[inline]
     /// Validates a string that is convertible to `T` according to the closure `f`.
     fn validate<T, F>(&self, f: F) -> bool
         where F: Fn(T) -> bool,
-              T: FromStr, { validate_str(self.as_ref(), f) }
+              T: FromStr;
 }
 
-impl<S> StrExt for S where S: AsRef<str> {}
+impl<'s> StrExt<'s> for &'s str {
+    fn split_when<F: Fn(char) -> bool>(&self, f: F) -> Option<(&'s str, &'s str)> {
+        self.find(f).map(|i| self.split_at(i))
+    }
+
+    fn split_once_(&self, delimiter: &str) -> Option<(&'s str, &'s str)> {
+        self.find(delimiter)
+            .map(|index| (&self[0..index], &self[(index + delimiter.len())..]))
+    }
+
+    #[inline]
+    fn paragraphs(&self, trim_newline: bool) -> Paragraphs<'s> {
+        Paragraphs { text: self, trim_newline }
+    }
+
+    #[inline]
+    fn validate<T, F>(&self, f: F) -> bool
+        where F: Fn(T) -> bool,
+              T: FromStr, { validate_str(self, f) }
+}
+
+impl<'s> StrExt<'s> for &'s String {
+    #[inline]
+    fn split_when<F: Fn(char) -> bool>(&self, f: F) -> Option<(&'s str, &'s str)> {
+        self.as_str().split_when(f)
+    }
+
+    #[inline]
+    fn split_once_(&self, delimiter: &str) -> Option<(&'s str, &'s str)> {
+        self.as_str().split_once_(delimiter)
+    }
+
+    #[inline]
+    fn paragraphs(&self, trim_newline: bool) -> Paragraphs<'s> {
+        self.as_str().paragraphs(trim_newline)
+    }
+
+    #[inline]
+    fn validate<T, F>(&self, f: F) -> bool
+        where F: Fn(T) -> bool,
+              T: FromStr, { self.as_str().validate(f) }
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
 
 pub trait OptionExt {
     fn is_some_and_valid<T, F>(&self, f: F) -> bool
@@ -62,6 +101,8 @@ impl<S> OptionExt for Option<S>
         validate_opt_str(s, f)
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 pub struct Paragraphs<'s> {
     text: &'s str,

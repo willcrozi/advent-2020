@@ -23,9 +23,45 @@ pub trait StrExt
     fn paragraphs(&self, trim_newline: bool) -> Paragraphs {
         Paragraphs { text: self.as_ref(), trim_newline }
     }
+
+    #[inline]
+    /// Validates a string that is convertible to `T` according to the closure `f`.
+    fn validate<T, F>(&self, f: F) -> bool
+        where F: Fn(T) -> bool,
+              T: FromStr, { validate_str(self.as_ref(), f) }
 }
 
 impl<S> StrExt for S where S: AsRef<str> {}
+
+pub trait OptionExt {
+    fn is_some_and_valid<T, F>(&self, f: F) -> bool
+        where F: Fn(T) -> bool,
+              T: FromStr;
+
+    fn is_valid_or_none<T, F>(&self, f: F) -> bool
+        where F: Fn(T) -> bool,
+              T: FromStr;
+}
+
+impl<S> OptionExt for Option<S>
+    where S: AsRef<str>,
+{
+    fn is_some_and_valid<T, F>(&self, f: F) -> bool
+        where F: Fn(T) -> bool,
+              T: FromStr,
+    {
+        let s = self.as_ref().map(|s| s.as_ref());
+        validate_req_str(s, f)
+    }
+
+    fn is_valid_or_none<T, F>(&self, f: F) -> bool
+        where F: Fn(T) -> bool,
+              T: FromStr
+    {
+        let s = self.as_ref().map(|s| s.as_ref());
+        validate_opt_str(s, f)
+    }
+}
 
 pub struct Paragraphs<'s> {
     text: &'s str,

@@ -1,76 +1,143 @@
-use std::mem;
 use std::str::FromStr;
 
-pub trait StrExt {
+pub trait StrExt
+    where Self: AsRef<str>,
+{
     /// Returns the left and right halves of `s` split at the first index where the pattern `p` matches.
-    fn split_when<F: Fn(char) -> bool>(&self, f: F) -> Option<(&str, &str)>;
+    fn split_when<F: Fn(char) -> bool>(&self, f: F) -> Option<(&str, &str)> {
+        let self_: &str = self.as_ref();
+        self_.find(f).map(|i| self_.split_at(i))
+    }
 
     /// Returns the result of splitting this string slice at the first occurrence of `delimiter`.
     /// The resulting halves both exclude the delimiter. Returns `None` if `delimiter` does not
     /// match within the string.
     ///
     /// Substitute for `core::str::split_once` without relying on nightly channel.
-    fn split_once_(&self, delimiter: &str) -> Option<(&str, &str)>;
-}
-
-impl StrExt for str {
-    fn split_when<F: Fn(char) -> bool>(&self, f: F) -> Option<(&str, &str)> {
-        self.find(f).map(|i| self.split_at(i))
-    }
-
     fn split_once_(&self, delimiter: &str) -> Option<(&str, &str)> {
-        self.find(delimiter)
-            .map(|index| (&self[0..index], &self[(index + delimiter.len())..]))
+        let self_: &str = self.as_ref();
+        self_.find(delimiter)
+            .map(|index| (&self_[0..index], &self_[(index + delimiter.len())..]))
+    }
 
+    fn paragraphs(&self, trim_newline: bool) -> Paragraphs {
+        Paragraphs { text: self.as_ref(), trim_newline }
     }
 }
 
+impl<S> StrExt for S where S: AsRef<str> {}
 
-/// Returns an iterator that iterates over the paragraphs in `input`. A paragraph is any consecutive
-/// lines of text separated by one or more blank lines, i.e. lines that are empty or consist only of
-/// whitespace.
-pub fn parse_paras(input: &str) -> impl Iterator<Item=String> + '_ {
-    let mut para_acc = input.lines()
-        .fold(ParaAcc::new(), |acc, line| acc.parse_line(line));
-
-    // Complete last paragraph in case of no trailing newline.
-    if para_acc.in_para { para_acc.paras.push(para_acc.cur_para); }
-
-    para_acc.paras.into_iter()
-        .map(|para| para.join("\n"))
+pub struct Paragraphs<'s> {
+    text: &'s str,
+    trim_newline: bool,
 }
 
-// Paragraph 'accumulator'
-pub struct ParaAcc<'s> {
-    paras: Vec<Vec<&'s str>>,
-    cur_para: Vec<&'s str>,
-    in_para: bool,
-}
+const NEWLINE_LEN: usize = 1;
+const CR_LEN: usize = 1;
 
-impl<'s> ParaAcc<'s> {
-    fn new() -> Self { ParaAcc { paras: vec![], cur_para: vec![], in_para: false } }
+impl<'s> Iterator for Paragraphs<'s> {
+    type Item = &'s str;
 
-    fn parse_line(mut self, line: &'s str) -> Self {
-        if is_blank(line) {
-            if self.in_para {
-                assert!(self.cur_para.len() > 0);
-                self.paras.push(mem::replace(&mut self.cur_para, vec![]));
-                self.in_para = false;
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut index = 0;
+
+        // Skip any blank lines.
+        let mut next_index = loop {
+            let (blank, next) = scan_next_line(self.text, index);
+            if blank {
+                if let Some(next) = next {
+                    index = next;
+                } else {
+                    // Iteration exhausted, set to empty slice.
+                    self.text = &self.text[0..0];
+                    return None;
+                }
+            } else {
+                break next;
             }
-        } else {
-            self.in_para = true;
-            self.cur_para.push(line);
+        };
+
+        // The beginning byte index of the paragraph.
+        let start = index;
+        let mut result;
+
+        loop {
+            if let Some(index) = next_index.take() {
+                let (blank, next) = scan_next_line(self.text, index);
+                next_index = next;
+
+                if blank {
+                    result = &self.text[start..index];
+                    if self.trim_newline {
+                        result = trim_newline(result);
+                    };
+
+                    self.text = &self.text[index..];
+                } else {
+                    // Scan next line.
+                    continue;
+                }
+            } else {
+                // End of string reached.
+                result = &self.text[start..];
+                self.text = &self.text[0..0];
+            }
+
+            // Paragraph finished
+            break;
         }
 
-        return self;
+        // Check for carriage-return control character and remove if present.
+        let last = result.chars().next_back();
 
-        ///////////////////////////////////////////////////////////
-        fn is_blank(s: &str) -> bool {
-            s.chars().fold(true, |blank, c| match c {
-                ' ' | '\t' => true && blank,
-                _ => false,
-            })
+        if let Some('\r') = last {
+            result = &result[..(result.len() - CR_LEN)];
         }
+
+        return Some(result);
+
+        /// Scans a line within `s` starting from byte index `start`.
+        ///
+        /// The returned tuple's first field is `true` if the first line in `s[start..]` is blank,
+        /// otherwise `false`.
+        ///
+        /// The returned tuple's second field is an optional index indicating the beginning of the
+        /// next line (which may be empty, in which case it will equal `s.len()`), it will have a
+        /// value of `None` if the `s[start..]` is a single line of text.
+        fn scan_next_line(s: &str, start: usize) -> (bool, Option<usize>) {
+            let chars = s[start..].chars();
+            let mut byte_pos = start;
+            let mut blank = true;
+
+            // TODO implement raw parsing of utf-8 bytes to improve efficiency here.
+            for c in chars {
+                byte_pos += c.len_utf8();
+
+                if c == '\n' {
+                    return (blank, Some(byte_pos));
+                }
+
+                blank = blank & c.is_whitespace();
+            }
+
+            // We reached the end of the string (no possible index for next line).
+            (blank, None)
+        }
+
+        fn trim_newline(s: &str) -> &str {
+            debug_assert!(s.chars().next_back() == Some('\n'));
+
+            let end = s.len() - NEWLINE_LEN;
+            let mut result = &s[..end];
+
+            let last = result.chars().next_back();
+            if let Some('\r') = last {
+                result = &result[..(result.len() - CR_LEN)];
+            }
+
+            result
+        }
+
     }
 }
 
@@ -98,4 +165,56 @@ pub fn validate_req_str<T: FromStr, F: Fn(T) -> bool>(val: Option<&str>, f: F) -
 pub fn validate_opt_str<T: FromStr, F: Fn(T) -> bool>(val: Option<&str>, f: F) -> bool {
     val.map(|val| validate_str(val, f))
         .unwrap_or(true)
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Tests
+////////////////////////////////////////////////////////////////////////////////
+#[cfg(test)]
+mod test {
+    use super::StrExt;
+
+    static TEXT: &'static str = "\
+Single line paragraph...
+
+Multi-line...
+paragraph...
+\t\t \t
+   \t    \t
+    \t Indented paragraph...\r
+
+No newline at end of string paragraph...";
+
+
+    #[test]
+    fn paragraphs_test() {
+
+        // Without newline trimming.
+        let paras = TEXT.paragraphs(false)
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            paras,
+            vec![
+                "Single line paragraph...\n",
+                "Multi-line...\nparagraph...\n",
+                "    \t Indented paragraph...\r\n",
+                "No newline at end of string paragraph...",
+            ]
+        );
+
+        // With newline trimming.
+        let paras = TEXT.paragraphs(true)
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            paras,
+            vec![
+                "Single line paragraph...",
+                "Multi-line...\nparagraph...",
+                "    \t Indented paragraph...",
+                "No newline at end of string paragraph...",
+            ]);
+    }
 }

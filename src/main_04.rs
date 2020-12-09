@@ -7,8 +7,8 @@ static PASSPORT_DATA: &'static str = include_str!("../data/data_04.txt");
 fn main() {
     // Part 1.
 
-    let valid_count = parse_paras(PASSPORT_DATA)
-        .map(|para| Passport::parse(&para))
+    let valid_count = PASSPORT_DATA.paragraphs(true)
+        .map(|para| Passport::parse(para))
         .filter(|pport| {
             // if !pport.is_valid() { eprintln!("INVALID: {:?}", pport); }
             pport.is_valid_pt1()
@@ -22,8 +22,8 @@ fn main() {
 
     // Part 2.
 
-    let valid_count = parse_paras(PASSPORT_DATA)
-        .map(|para| Passport::parse(&para))
+    let valid_count = PASSPORT_DATA.paragraphs(true)
+        .map(|para| Passport::parse(para))
         .filter(|pport| pport.is_valid_pt2())
         .count();
 

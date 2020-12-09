@@ -1,4 +1,5 @@
 use std::mem;
+use std::str::FromStr;
 
 pub trait StrExt {
     /// Returns the left and right halves of `s` split at the first index where the pattern `p` matches.
@@ -73,4 +74,28 @@ impl<'s> ParaAcc<'s> {
     }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Validation
+////////////////////////////////////////////////////////////////////////////////
+
+/// Validates a string that is convertible to `T` according to the closure `f`.
+pub fn validate_str<T: FromStr, F: Fn(T) -> bool>(val: &str, f: F) -> bool
+    where T: FromStr,
+          F: Fn(T) -> bool,
+{
+    T::from_str(val)
+        .map(|val| f(val))
+        .unwrap_or(false)
+}
+
+/// Validates a required string value according to `f`. The `None` variant is considered _invalid_.
+pub fn validate_req_str<T: FromStr, F: Fn(T) -> bool>(val: Option<&str>, f: F) -> bool {
+    val.map(|val| validate_str(val, f))
+        .unwrap_or(false)
+}
+
+/// Validates an optional string value according to `f`. The `None` variant is considered _valid_.
+pub fn validate_opt_str<T: FromStr, F: Fn(T) -> bool>(val: Option<&str>, f: F) -> bool {
+    val.map(|val| validate_str(val, f))
+        .unwrap_or(true)
+}

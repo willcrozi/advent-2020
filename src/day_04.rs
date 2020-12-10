@@ -4,32 +4,23 @@ use std::str::FromStr;
 
 static PASSPORT_DATA: &'static str = include_str!("../data/data_04.txt");
 
-fn main() {
-    // Part 1.
-
-    let valid_count = PASSPORT_DATA.paragraphs(true)
-        .map(|para| Passport::parse(para))
-        .filter(|pport| {
-            // if !pport.is_valid() { eprintln!("INVALID: {:?}", pport); }
-            pport.is_valid_pt1()
-        })
-        // .map(|pp| {
-        //     println!("{:?}", pport);
-        // })
-        .count();
-
-    println!("Part 1: Valid passports: {}", valid_count);
-
-    // Part 2.
-
-    let valid_count = PASSPORT_DATA.paragraphs(true)
-        .map(|para| Passport::parse(para))
-        .filter(|pport| pport.is_valid_pt2())
-        .count();
-
-    println!("Part 2: Valid passports: {}", valid_count);
+pub fn part_1() -> usize {
+    get_passports()
+        .filter(Passport::is_valid_pt1)
+        .count()
 }
 
+pub fn part_2() -> usize {
+    get_passports()
+        .filter(Passport::is_valid_pt2)
+        .count()
+}
+
+fn get_passports<'a>() -> impl Iterator<Item=Passport<'a>> {
+    PASSPORT_DATA.paragraphs(true)
+        .map(|para| Passport::parse(para))
+
+}
 
 #[derive(Clone, Debug)]
 struct Passport<'s> {

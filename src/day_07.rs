@@ -3,10 +3,24 @@ use std::collections::{HashMap, HashSet};
 
 static BAG_RULES: &'static str = include_str!("../data/data_07.txt");
 
-fn main() {
+pub fn part_1() -> usize {
+    let (container_map, _) = get_maps();
 
-    // Common.
+    // Query the container map for all bags able to directly or indirectly hold a "shiny gold" bag.
+    containers("shiny gold", &container_map).len()
+}
 
+pub fn part_2() -> u32 {
+    let (_, contents_map) = get_maps();
+
+    // Recursively query what bags are required inside a "shiny gold" bag.
+    contents("shiny gold", &contents_map)
+        .into_iter()
+        .map(|(_bag, count)| count)
+        .sum()
+}
+
+fn get_maps() -> (HashMap<String, Vec<String>>, HashMap<String, Vec<(u32, String)>>) {
     // When given a bag, returns all bags that can directly contain it.
     let mut container_map = HashMap::new();
 
@@ -32,25 +46,10 @@ fn main() {
             assert!(prev.is_none());  // Something went wrong if we already had an entry,
         });
 
-    // Part 1.
-
-    // Query the container map for all bags able to directly or indirectly hold a "shiny gold" bag.
-    let bags = containers("shiny gold", &container_map);
-
-    println!("Part 1: Possible bags that can directly or indirectly hold a shiny gold bag: {}", bags.len());
-
-    // Part 2.
-
-    // Recursively query what bags are required inside a "shiny gold" bag.
-    let count: u32 = contents("shiny gold", &contents_map)
-        .into_iter()
-        .map(|(_bag, count)| count)
-        .sum();
-
-    println!("Part 2: Bags required to be inside a shiny gold bag: {}", count);
+    (container_map, contents_map)
 }
 
-// When given a bag colour, give back all bags that can directly or indirectly hold it.
+/// When given a bag colour, give back all bags that can directly or indirectly hold it.
 fn containers(bag: &str, container_map: &HashMap<String, Vec<String>>)
     -> HashSet<String>
 {
@@ -94,7 +93,6 @@ fn contents_(bag: &str, contents_map: &HashMap<String, Vec<(u32, String)>>, fact
 
     acc
 }
-
 
 fn parse_rule(rule: &str) -> (String, Vec<(u32, String)>) {
     let mut words = rule.split_whitespace();

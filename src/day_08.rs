@@ -2,17 +2,15 @@ use std::str::FromStr;
 
 static PROGRAM_DATA: &'static str = include_str!("../data/data_08.txt");
 
-fn main() {
-    let program = PROGRAM_DATA.lines()
-        .map(|line| Some(parse(line))).collect::<Vec<_>>();
+pub fn part_1() -> i64 {
+    let mut program = get_program();
 
-    // Part 1.
+    run(&mut program[..])
+        .acc
+}
 
-    let cpu_state = run(&mut program.clone()[..]);
-    println!("Part 1: The cpu accumulator is: {}", cpu_state.acc);
-
-
-    // Part 2.
+pub fn part_2() -> Option<i64> {
+    let program = get_program();
 
     // Bruteforce approach.
     for mod_index in 0..program.len() {
@@ -27,17 +25,18 @@ fn main() {
             instr => *instr,
         };
 
-        let modded = mod_program[mod_index].unwrap();
-
         let cpu_state = run(&mut mod_program);
         if cpu_state.ip == mod_program.len() {
-            println!(
-                "Part 2: The accumulator is: {} (and the modified instruction was {:?})",
-                cpu_state.acc,
-                modded
-            );
+            return Some(cpu_state.acc);
         }
     }
+    None
+}
+
+fn get_program() -> Vec<Option<(OpCode, i64)>>{
+    PROGRAM_DATA.lines()
+        .map(|line| Some(parse(line)))
+        .collect()
 }
 
 #[derive(Copy, Clone, Debug)]

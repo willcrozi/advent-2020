@@ -1,17 +1,17 @@
 static WORLD_DATA: &'static str = include_str!("../data/data_03.txt");
 
-fn main() {
+pub fn part_1() -> usize {
     let world = World::init(WORLD_DATA);
 
-    // Part 1.
     let mut tobog = Toboggan { world: &world, loc: (0, 0), trees: 0 };
-    loop {
-        if !tobog.travel(3, 1) { break; }
-    }
+    while tobog.travel(3, 1) {}
 
-    println!("Part 1: We hit {} trees!", tobog.trees);
+    tobog.trees
+}
 
-    // Part 2.
+pub fn part_2() -> usize {
+    let world = World::init(WORLD_DATA);
+
     let slopes: [(usize, usize); 5] = [
         (1, 1),
         (3, 1),
@@ -29,7 +29,7 @@ fn main() {
         tobog.trees
     });
 
-    println!("Part 2: The product of tree counts is: {}", tree_counts.fold(1, |acc, count| acc * count));
+    tree_counts.fold(1, |acc, count| acc * count)
 }
 
 struct World {

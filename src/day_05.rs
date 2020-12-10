@@ -3,36 +3,33 @@ use std::cmp::Ordering;
 
 static SEAT_DATA: &'static str = include_str!("../data/data_05.txt");
 
-fn main() {
+pub fn part_1() -> u32 {
+    SEAT_DATA.lines()
+        .map(parse_loc)
+        .fold(0, |max, seat| cmp::max(seat.id(), max))
+}
 
-    let mut max_seat_id = 0;
-
+pub fn part_2() -> Option<u32> {
     let mut seats = SEAT_DATA.lines()
         .map(parse_loc)
-        .map(|seat| {
-            max_seat_id = cmp::max(seat.id(), max_seat_id);
-            seat
-        })
         .collect::<Vec<_>>();
 
-    println!("Part 1: Max seat ID is {}", max_seat_id);
-
-    // Part 2.
     seats.sort_unstable();
     let mut seats = seats.into_iter();
     let mut prev = seats.next().unwrap();
-    // println!("{:?} id: {}", &prev, prev.id());
 
+    let mut result = None;
     for cur in seats {
         assert!(cur.id() > prev.id());
-        // println!("{:?} id: {}", &cur, cur.id());
 
         if cur.id() - prev.id() == 2 {
-            println!("Part 2: Your seat id is: {}", cur.id() - 1);
+            result = Some(cur.id() - 1);
             break;
         }
         prev = cur;
     }
+
+    result
 }
 
 #[derive(Debug, Eq)]

@@ -15,37 +15,6 @@ name = "advent_2020"
 path = "src/lib.rs"
 
 [[bin]]
-name = "main_01"
-path = "src/main_01.rs"
+name = "main"
+path = "src/main.rs"
 
-[[bin]]
-name = "main_02"
-path = "src/main_02.rs"
-
-[[bin]]
-name = "main_03"
-path = "src/main_03.rs"
-
-[[bin]]
-name = "main_04"
-path = "src/main_04.rs"
-
-[[bin]]
-name = "main_05"
-path = "src/main_05.rs"
-
-[[bin]]
-name = "main_06"
-path = "src/main_06.rs"
-
-[[bin]]
-name = "main_07"
-path = "src/main_07.rs"
-
-[[bin]]
-name = "main_08"
-path = "src/main_08.rs"
-
-[[bin]]
-name = "main_09"
-path = "src/main_09.rs"

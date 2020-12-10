@@ -3,23 +3,16 @@ use std::collections::VecDeque;
 
 static ENCRYPTED: &'static str = include_str!("../data/data_09.txt");
 
-fn main() {
-    // Part 1.
-
-    let mut enc_data = ENCRYPTED.lines()
-        .map(|line| u32::from_str(line).unwrap());
+pub fn part_1() -> Option<u32> {
+    let mut enc_data = get_encrypted_data();
 
     let mut window = enc_data.by_ref()
         .take(25)
         .collect::<VecDeque<_>>();
 
-    let mut invalid = None;
-
     for n in enc_data {
         if !is_valid(n, &window) {
-            invalid = Some(n);
-            println!("Part 1: Invalid value: {}", n);
-            break;
+            return Some(n);
         }
 
         window.pop_front();
@@ -35,15 +28,13 @@ fn main() {
         }
         false
     }
+    None
+}
 
-    // Part 2.
-
-    let mut enc_data = ENCRYPTED.lines()
-        .map(|line| u32::from_str(line).unwrap());
-
+pub fn part_2() -> Option<u32> {
+    let mut enc_data = get_encrypted_data();
+    let invalid = part_1().expect("No invalid number found.");
     let mut buffer = vec![];
-
-    let invalid = invalid.expect("No invalid number found.");
 
     for start in 0.. {
         let mut sum = 0;
@@ -54,8 +45,8 @@ fn main() {
                 if let Some(n) = enc_data.next() {
                     buffer.push(n);
                 } else {
-                    println!("Sequence summing to invalid item not found.");
-                    return;
+                    // Sequence not found.
+                    return None;
                 }
             }
 
@@ -70,10 +61,14 @@ fn main() {
                 seq.sort();
 
                 let (low, high) = (seq.first().unwrap(), seq.last().unwrap());
-
-                println!("Part 2: {} + {} == {}", low, high, low + high);
-                return;
+                return Some(low + high);
             }
         }
     }
+    None
+}
+
+fn get_encrypted_data() -> impl Iterator<Item=u32> {
+    ENCRYPTED.lines()
+        .map(|line| u32::from_str(line).unwrap())
 }

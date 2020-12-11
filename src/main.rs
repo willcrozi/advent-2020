@@ -8,6 +8,7 @@ mod day_07;
 mod day_08;
 mod day_09;
 mod day_10;
+mod day_11;
 
 fn main() {
     println!("----------------------------------------");
@@ -49,6 +50,14 @@ fn main() {
     println!("----------------------------------------");
     println!("Day 10, part 1: {}", day_10::part_1());
     println!("Day 10, part 2: {}", day_10::part_2());
+
+    println!("----------------------------------------");
+    println!("Day 11, part 1: {}", day_11::part_1());
+    println!("Day 11, part 2: {}", day_11::part_2());
+
+    // println!("----------------------------------------");
+    // println!("Day , part 1: {}", day_::part_1());
+    // println!("Day , part 2: {}", day_::part_2());
 }
 
 #[cfg(test)]
@@ -113,5 +122,11 @@ mod test {
     fn day_10() {
         assert_eq!(day_10::part_1(), 2592);
         assert_eq!(day_10::part_2(), 198428693313536);
+    }
+
+    #[test]
+    fn day_11() {
+        assert_eq!(day_11::part_1(), 2238);
+        assert_eq!(day_11::part_2(), 2013);
     }
 }
